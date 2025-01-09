@@ -45,17 +45,17 @@ struct SettingsView: View {
                 
                 // Create Directory Section
                 HStack {
-                    Text("Create Directory:")
+                    Text("Install Files:")
                     Spacer()
-                    Button("Create") {
-                        appDelegate.createDirectories()
+                    Button("Install") {
+                        appDelegate.installFiles()
                     }
                     .buttonStyle(BorderedButtonStyle())
                 }
                 
                 // Delete Directory Section
                 HStack {
-                    Text("Delete Directory:")
+                    Text("Delete Files:")
                     Spacer()
                     Button("Delete") {
                         appDelegate.deleteDirectories()

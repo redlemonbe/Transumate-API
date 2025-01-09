@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		13546D862D29D39000D259A7 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 13546D852D29D39000D259A7 /* Vapor */; };
+		13F4A9652D3048F40042F394 /* Translate.py in Resources */ = {isa = PBXBuildFile; fileRef = 13F4A9642D3048F40042F394 /* Translate.py */; };
+		13F4A9662D3048F40042F394 /* Install.py in Resources */ = {isa = PBXBuildFile; fileRef = 13F4A9632D3048F40042F394 /* Install.py */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +32,9 @@
 /* Begin PBXFileReference section */
 		13F4A9352D301E4B0042F394 /* Transumate APITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "Transumate APITests.xctest"; path = "/Users/jfbaudson/IaWeb/MacOS_IA/TextProcessorAI/build/Debug/Transumate API.app/Contents/PlugIns/Transumate APITests.xctest"; sourceTree = "<absolute>"; };
 		13F4A9362D301E4B0042F394 /* Transumate APIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "Transumate APIUITests.xctest"; path = "/Users/jfbaudson/IaWeb/MacOS_IA/TextProcessorAI/build/Debug/Transumate APIUITests-Runner.app/Contents/PlugIns/Transumate APIUITests.xctest"; sourceTree = "<absolute>"; };
-		13F4A9592D3023E40042F394 /* Transumate API.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Transumate API.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13F4A95A2D303B770042F394 /* Transumate API.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Transumate API.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13F4A9632D3048F40042F394 /* Install.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = Install.py; path = /Users/jfbaudson/iatest/TransumateIA/Install.py; sourceTree = "<absolute>"; };
+		13F4A9642D3048F40042F394 /* Translate.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = Translate.py; path = /Users/jfbaudson/iatest/TransumateIA/Translate.py; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -80,10 +84,12 @@
 		13C2D6042D2898B000309D22 = {
 			isa = PBXGroup;
 			children = (
+				13F4A9632D3048F40042F394 /* Install.py */,
+				13F4A9642D3048F40042F394 /* Translate.py */,
 				13C2D60F2D2898B000309D22 /* TextProcessorAI */,
 				13C2D6212D2898B100309D22 /* TextProcessorAITests */,
 				13C2D62B2D2898B100309D22 /* TextProcessorAIUITests */,
-				13F4A9592D3023E40042F394 /* Transumate API.app */,
+				13F4A95A2D303B770042F394 /* Transumate API.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -110,7 +116,7 @@
 				13546D852D29D39000D259A7 /* Vapor */,
 			);
 			productName = TextProcessorAI;
-			productReference = 13F4A9592D3023E40042F394 /* Transumate API.app */;
+			productReference = 13F4A95A2D303B770042F394 /* Transumate API.app */;
 			productType = "com.apple.product-type.application";
 		};
 		13C2D61D2D2898B100309D22 /* Transumate APITests */ = {
@@ -211,6 +217,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13F4A9652D3048F40042F394 /* Translate.py in Resources */,
+				13F4A9662D3048F40042F394 /* Install.py in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,6 +404,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"TextProcessorAI/Preview Content\"";
+				DEVELOPMENT_TEAM = GR7ZXNTBJS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "";
@@ -436,6 +445,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"TextProcessorAI/Preview Content\"";
+				DEVELOPMENT_TEAM = GR7ZXNTBJS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "";

@@ -19,6 +19,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        checkDirectories()
         setupStatusBarMenu()
         toggleServer() // Démarre automatiquement le serveur avec le port configuré
     }
@@ -240,25 +241,56 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     // MARK: - Delete and create directory
     /// Creates the necessary directories for the application.
     /// Ensures the main directory and `models` subdirectory exist.
-    func createDirectories() {
-            let homePath = FileManager.default.homeDirectoryForCurrentUser
-            let mainDirectory = homePath.appendingPathComponent(".TrasumateAPI")
-            let modelsDirectory = mainDirectory.appendingPathComponent("models")
-            
-            do {
-                try FileManager.default.createDirectory(at: mainDirectory, withIntermediateDirectories: true, attributes: nil)
-                try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true, attributes: nil)
-                directoryStatusMessage = "Directories successfully created."
-                directoryStatusColor = .green
-            } catch {
-                directoryStatusMessage = "Failed to create directories: \(error.localizedDescription)"
-                directoryStatusColor = .red
-            }
+    
+    private func copyFile(from resourceName: String, withExtension fileExtension: String, to destinationDirectory: URL) throws {
+        guard let resourceURL = Bundle.main.url(forResource: resourceName, withExtension: fileExtension) else {
+            throw NSError(domain: "FileCopyError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Resource \(resourceName).\(fileExtension) not found in the bundle"])
         }
+        
+        let destinationURL = destinationDirectory.appendingPathComponent(resourceURL.lastPathComponent)
+        
+        if !FileManager.default.fileExists(atPath: destinationURL.path) {
+            print("📄 Copying \(resourceName).\(fileExtension) to \(destinationDirectory.path)...")
+            try FileManager.default.copyItem(at: resourceURL, to: destinationURL)
+            print("✅ File \(resourceName).\(fileExtension) copied to \(destinationDirectory.path)")
+        } else {
+            print("📄 File \(resourceName).\(fileExtension) already exists in \(destinationDirectory.path)")
+        }
+    }
+    
+    func installFiles() {
+        print("🔧 Installing directories and files...")
+        let homePath = FileManager.default.homeDirectoryForCurrentUser
+        let mainDirectory = homePath.appendingPathComponent(".transumateAPI")
+        let modelsDirectory = mainDirectory.appendingPathComponent("models")
+        
+        do {
+            // Créez les répertoires
+            if !FileManager.default.fileExists(atPath: mainDirectory.path) {
+                try FileManager.default.createDirectory(at: mainDirectory, withIntermediateDirectories: true, attributes: nil)
+                print("✅ Main directory created at: \(mainDirectory.path)")
+            }
+            if !FileManager.default.fileExists(atPath: modelsDirectory.path) {
+                try FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true, attributes: nil)
+                print("✅ 'models' directory created at: \(modelsDirectory.path)")
+            }
+            
+            // Copiez les fichiers
+            try copyFile(from: "Translate", withExtension: "py", to: mainDirectory)
+            try copyFile(from: "Install", withExtension: "py", to: mainDirectory)
+            
+            directoryStatusMessage = "Directories and files successfully installed."
+            directoryStatusColor = .green
+        } catch {
+            print("❌ Error during installation: \(error.localizedDescription)")
+            directoryStatusMessage = "Error during installation: \(error.localizedDescription)"
+            directoryStatusColor = .red
+        }
+    }
 
         func deleteDirectories() {
             let homePath = FileManager.default.homeDirectoryForCurrentUser
-            let mainDirectory = homePath.appendingPathComponent(".TrasumateAPI")
+            let mainDirectory = homePath.appendingPathComponent(".transumateAPI")
             
             do {
                 if FileManager.default.fileExists(atPath: mainDirectory.path) {
@@ -275,17 +307,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             }
         }
 
-        func checkDirectories() {
-            let homePath = FileManager.default.homeDirectoryForCurrentUser
-            let mainDirectory = homePath.appendingPathComponent(".TrasumateAPI")
-            let modelsDirectory = mainDirectory.appendingPathComponent("models")
-            
-            if FileManager.default.fileExists(atPath: mainDirectory.path) && FileManager.default.fileExists(atPath: modelsDirectory.path) {
-                directoryStatusMessage = "Directories exist and are correctly configured."
-                directoryStatusColor = .green
-            } else {
-                directoryStatusMessage = "Directories are missing."
-                directoryStatusColor = .red
-            }
+    func checkDirectories() {
+        print("🔍 Checking directories and files...")
+        let homePath = FileManager.default.homeDirectoryForCurrentUser
+        let mainDirectory = homePath.appendingPathComponent(".transumateAPI")
+        let modelsDirectory = mainDirectory.appendingPathComponent("models")
+        let mainFile = mainDirectory.appendingPathComponent("Translate.py")
+        let modelsFile = modelsDirectory.appendingPathComponent("Install.py")
+        
+        if FileManager.default.fileExists(atPath: mainDirectory.path) &&
+            FileManager.default.fileExists(atPath: modelsDirectory.path) &&
+            FileManager.default.fileExists(atPath: mainFile.path) &&
+            FileManager.default.fileExists(atPath: modelsFile.path) {
+            directoryStatusMessage = "Directories and files are correctly configured."
+            directoryStatusColor = .green
+            print("✅ All directories and files exist.")
+        } else {
+            directoryStatusMessage = "Directories or files are missing."
+            directoryStatusColor = .red
+            print("⚠️ Directories or files are missing.")
         }
+    }
 }
