@@ -1,17 +1,10 @@
-//
-//  TextProcessorAIApp.swift
-//  TextProcessorAI
-//
-//  Created by Jean-François Baudson on 03/01/2025.
-//
-
 import SwiftUI
 
 @main
 struct TextProcessorAIApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+        Settings { EmptyView() } // Évite de générer une fenêtre par défaut
     }
 }

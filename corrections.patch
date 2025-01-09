@@ -1,0 +1,71 @@
+diff --git a/SettingsView.swift b/SettingsView.swift
+index abcdef1..1234567 100644
+--- a/SettingsView.swift
++++ b/SettingsView.swift
+@@ -1,8 +1,6 @@
+ import SwiftUI
+-import Metal
+
+ struct SettingsView: View {
+-    @State private var isMetalAvailable: Bool = MTLCreateSystemDefaultDevice() != nil
+     @State private var apiKey: String = ""
+     @State private var port: String = "8080"
+     var closeWindow: () -> Void
+@@ -27,13 +25,6 @@ struct SettingsView: View {
+             Divider()
+
+             // Server Status Section
+-            // Remove Metal check
+-            VStack {
+-                Text("Metal Available: \(isMetalAvailable ? "Yes" : "No")")
+-                    .font(.footnote)
+-                    .foregroundColor(isMetalAvailable ? .green : .red)
+-            }
+-
+             serverStatusSection
+
+             // Server Settings Section
+@@ -123,7 +114,12 @@ struct SettingsView: View {
+
+     func regenerateApiKey() {
+         apiKey = UUID().uuidString
+-        saveConfiguration()
++        do {
++            try saveConfiguration()
++        } catch {
++            print("Error regenerating API key: \(error)")
++        }
+     }
+
+     func saveConfiguration() throws {
+@@ -135,10 +131,12 @@ struct SettingsView: View {
+         userDefaults.set(port, forKey: "Port")
+         print("✅ Configuration saved: API Key: \(apiKey), Port: \(port)")
+
++        // Validate port before restarting the server
+         if appDelegate.isServerRunning {
+             print("🔄 Restarting server with new configuration...")
+             appDelegate.stopServer()
+         }
++        guard validatePort(port) else { print("❌ Invalid port."); return }
+         appDelegate.startServer(on: Int(port) ?? 8080)
+     }
+
+@@ -147,7 +145,14 @@ struct SettingsView: View {
+
+     func toggleServer() {
+         if appDelegate.isServerRunning {
++            do {
+             appDelegate.stopServer()
++            } catch {
++                print("Error stopping server: \(error)")
++            }
+         } else {
+-            saveConfiguration()
++            do {
++                try saveConfiguration()
++            } catch {
++                print("Error starting server: \(error)")
++            }
+         }
+     }
