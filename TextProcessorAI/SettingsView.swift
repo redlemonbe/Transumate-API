@@ -49,6 +49,8 @@ struct SettingsView: View {
                     Spacer()
                     Button("Install") {
                         appDelegate.installFiles()
+                        //appDelegate.createPythonEnvironment() // Crée l'environnement Python
+                        //appDelegate.executePythonScript("Translate.py") // Exécute le script Python Translate.py
                     }
                     .buttonStyle(BorderedButtonStyle())
                 }
@@ -100,7 +102,15 @@ struct SettingsView: View {
                     .buttonStyle(BorderedButtonStyle())
 
                     Button(appDelegate.isServerRunning ? "Stop Server" : "Start Server") {
-                        toggleServer()
+                        if appDelegate.isServerRunning {
+                            appDelegate.stopServer()
+                        } else {
+                            guard let portInt = Int(port), (1...65535).contains(portInt) else {
+                                print("❌ Invalid port")
+                                return
+                            }
+                            appDelegate.startServer(on: portInt)
+                        }
                     }
                     .buttonStyle(BorderedButtonStyle())
                 }

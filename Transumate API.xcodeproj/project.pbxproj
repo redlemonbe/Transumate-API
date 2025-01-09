@@ -30,27 +30,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		13F4A9352D301E4B0042F394 /* Transumate APITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "Transumate APITests.xctest"; path = "/Users/jfbaudson/IaWeb/MacOS_IA/TextProcessorAI/build/Debug/Transumate API.app/Contents/PlugIns/Transumate APITests.xctest"; sourceTree = "<absolute>"; };
-		13F4A9362D301E4B0042F394 /* Transumate APIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = "Transumate APIUITests.xctest"; path = "/Users/jfbaudson/IaWeb/MacOS_IA/TextProcessorAI/build/Debug/Transumate APIUITests-Runner.app/Contents/PlugIns/Transumate APIUITests.xctest"; sourceTree = "<absolute>"; };
 		13F4A95A2D303B770042F394 /* Transumate API.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Transumate API.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13F4A9632D3048F40042F394 /* Install.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = Install.py; path = /Users/jfbaudson/iatest/TransumateIA/Install.py; sourceTree = "<absolute>"; };
 		13F4A9642D3048F40042F394 /* Translate.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; name = Translate.py; path = /Users/jfbaudson/iatest/TransumateIA/Translate.py; sourceTree = "<absolute>"; };
+		13F4A9672D305CC70042F394 /* Transumate APITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Transumate APITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13F4A9682D305CC70042F394 /* Transumate APIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Transumate APIUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		13C2D60F2D2898B000309D22 /* TextProcessorAI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = TextProcessorAI;
-			sourceTree = "<group>";
-		};
-		13C2D6212D2898B100309D22 /* TextProcessorAITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TextProcessorAITests;
-			sourceTree = "<group>";
-		};
-		13C2D62B2D2898B100309D22 /* TextProcessorAIUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TextProcessorAIUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -87,9 +77,9 @@
 				13F4A9632D3048F40042F394 /* Install.py */,
 				13F4A9642D3048F40042F394 /* Translate.py */,
 				13C2D60F2D2898B000309D22 /* TextProcessorAI */,
-				13C2D6212D2898B100309D22 /* TextProcessorAITests */,
-				13C2D62B2D2898B100309D22 /* TextProcessorAIUITests */,
 				13F4A95A2D303B770042F394 /* Transumate API.app */,
+				13F4A9672D305CC70042F394 /* Transumate APITests.xctest */,
+				13F4A9682D305CC70042F394 /* Transumate APIUITests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -132,14 +122,11 @@
 			dependencies = (
 				13C2D6202D2898B100309D22 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				13C2D6212D2898B100309D22 /* TextProcessorAITests */,
-			);
 			name = "Transumate APITests";
 			packageProductDependencies = (
 			);
 			productName = TextProcessorAITests;
-			productReference = 13F4A9352D301E4B0042F394 /* Transumate APITests.xctest */;
+			productReference = 13F4A9672D305CC70042F394 /* Transumate APITests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		13C2D6272D2898B100309D22 /* Transumate APIUITests */ = {
@@ -155,14 +142,11 @@
 			dependencies = (
 				13C2D62A2D2898B100309D22 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				13C2D62B2D2898B100309D22 /* TextProcessorAIUITests */,
-			);
 			name = "Transumate APIUITests";
 			packageProductDependencies = (
 			);
 			productName = TextProcessorAIUITests;
-			productReference = 13F4A9362D301E4B0042F394 /* Transumate APIUITests.xctest */;
+			productReference = 13F4A9682D305CC70042F394 /* Transumate APIUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -400,6 +384,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TextProcessorAI/TextProcessorAI.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -441,6 +426,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TextProcessorAI/TextProcessorAI.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
