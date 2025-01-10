@@ -28,7 +28,7 @@ extension AppDelegate {
         if isServerRunning {
             stopServer()
         } else {
-            guard let portInt = Int(UserDefaults.standard.string(forKey: "Port") ?? "8080"),
+            guard let portInt = Int(UserDefaults.standard.string(forKey: "Port") ?? "5001"),
                   (1...65535).contains(portInt) else {
                 print("❌ Invalid port")
                 return

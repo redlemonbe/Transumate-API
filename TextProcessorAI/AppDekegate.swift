@@ -73,41 +73,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func createPythonEnvironment() {
         print("🔧 Setting up Python environment...")
         let homePath = FileManager.default.homeDirectoryForCurrentUser
-        let envDirectory = homePath.appendingPathComponent(".transumate") // Root of the environment
+        let envDirectory = homePath.appendingPathComponent(".transumate")
 
-        // Check if the environment already exists
         if FileManager.default.fileExists(atPath: envDirectory.path) {
             print("✅ Python environment already exists at: \(envDirectory.path)")
             return
         }
 
-        // Command to create the Python environment
         let createEnvCommand = "python3 -m venv \(envDirectory.path)"
 
         do {
             try executeShellCommand(createEnvCommand)
             print("✅ Python environment created at: \(envDirectory.path)")
-            
-            // Liste des packages à installer
-            let packages = ["requests", "numpy", "pandas", "scipy","tqdm", "transformers", "torch", "torchaudio", "torchvision", "goose3", "huggingface_hub", "keybert", "langcodes" ]
-            
-            // Construire la commande pip install
-            let installPackagesCommand = "\(envDirectory.path)/bin/pip install \(packages.joined(separator: " "))"
-
-            do {
-                try executeShellCommand(installPackagesCommand)
-                print("✅ Installed packages: \(packages.joined(separator: ", ")) in Python environment")
-            } catch {
-                print("❌ Failed to install packages: \(error.localizedDescription)")
+            // Launch the SwiftUI view for installation progress
+            DispatchQueue.main.async {
+                let pipProgressView = PipProgressView()
+                let hostingController = NSHostingController(rootView: pipProgressView)
+                let pipWindow = NSWindow(contentViewController: hostingController)
+                pipWindow.title = "Python Package Installation" // Define the title
+                pipWindow.styleMask = [.titled, .closable, .fullSizeContentView]
+                pipWindow.makeKeyAndOrderFront(nil) // Bring to the front
+                pipWindow.center() // Center the window
             }
-                   
-            
-            directoryStatusMessage = "Python environment created successfully."
-            directoryStatusColor = .green
         } catch {
             print("❌ Failed to create Python environment: \(error.localizedDescription)")
-            directoryStatusMessage = "Failed to create Python environment: \(error.localizedDescription)"
-            directoryStatusColor = .red
         }
     }
     
