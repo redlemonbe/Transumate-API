@@ -17,6 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var isPaused: Bool = false // Ajout de la variable observable pour l'état de pause
     @Published var directoryStatusMessage: String = ""
     @Published var directoryStatusColor: Color = .red
+    @Published var areFilesInstalled: Bool = false
     
     // MARK: - Application Lifecycle
 
@@ -149,10 +150,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
             directoryStatusMessage = "Python environment, directories, and files successfully installed."
             directoryStatusColor = .green
+            areFilesInstalled = true
+            checkDirectories()
         } catch {
             print("❌ Error during installation: \(error.localizedDescription)")
             directoryStatusMessage = "Error during installation: \(error.localizedDescription)"
             directoryStatusColor = .red
+            areFilesInstalled = false
         }
     }
 
@@ -177,6 +181,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 directoryStatusMessage = "Directories and Python environment successfully deleted."
                 directoryStatusColor = .green
                 print("✅ Directories and Python environment deleted successfully.")
+                areFilesInstalled = false
+                checkDirectories()
             } else {
                 directoryStatusMessage = "Directories do not exist."
                 directoryStatusColor = .red

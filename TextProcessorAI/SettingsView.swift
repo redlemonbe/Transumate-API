@@ -49,10 +49,9 @@ struct SettingsView: View {
                     Spacer()
                     Button("Install") {
                         appDelegate.installFiles()
-                        //appDelegate.createPythonEnvironment() // Crée l'environnement Python
-                        //appDelegate.executePythonScript("Install_swift.py") // Exécute le script Python Translate.py
                     }
                     .buttonStyle(BorderedButtonStyle())
+                    .disabled(appDelegate.areFilesInstalled) // Désactivation du bouton
                 }
                 
                 // Delete Directory Section
