@@ -50,7 +50,7 @@ struct SettingsView: View {
                     Button("Install") {
                         appDelegate.installFiles()
                         //appDelegate.createPythonEnvironment() // Crée l'environnement Python
-                        appDelegate.executePythonScript("Install_swift.py") // Exécute le script Python Translate.py
+                        //appDelegate.executePythonScript("Install_swift.py") // Exécute le script Python Translate.py
                     }
                     .buttonStyle(BorderedButtonStyle())
                 }

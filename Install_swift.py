@@ -1,3 +1,8 @@
+try:
+    import requests
+except ImportError:
+    raise RuntimeError("The 'requests' module is not installed. Please run 'pip install requests'")
+    
 import os
 import subprocess
 import sys
