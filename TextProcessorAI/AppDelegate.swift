@@ -19,6 +19,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var directoryStatusColor: Color = .red
     @Published var areFilesInstalled: Bool = false
     
+    struct TranslationResponse: Content {
+        let status: String
+        let title: String
+        let translated_title: String
+        let author: String
+        let date: String
+        let keywords: [String: String]
+        let text: String
+    }
+    
     // MARK: - Application Lifecycle
 
     /// Called when the application has finished launching.
@@ -122,6 +132,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 throw NSError(domain: "ShellCommandError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errorMessage])
             }
         }
+    }
+    
+    func executeShellCommandwithresult(_ command: String) throws -> String {
+        let process = Process()
+        process.launchPath = "/bin/zsh" // Remplacez par /bin/bash ou autre si nécessaire
+        process.arguments = ["-c", command]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        try process.run()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: data, encoding: .utf8) else {
+            throw NSError(domain: "ExecuteShellCommandError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to decode shell output"])
+        }
+
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     /// Installs the Python environment, required directories, and files.
@@ -233,5 +262,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         } else {
             print("📄 File \(resourceName).\(fileExtension) already exists in \(destinationDirectory.path)")
         }
+    }
+}
+
+// Extension of AppDelegate for translation logic
+extension AppDelegate {
+    /// Executes the Python translation script and returns the result.
+    /// - Parameter inputText: The text to translate.
+    /// - Returns: The result of the translation as a dictionary.
+    func performTranslationWithScript(inputText: String) throws -> TranslationResponse {
+        let scriptName = "Translate.py"
+
+        // Path setup
+        let homePath = FileManager.default.homeDirectoryForCurrentUser
+        let envDirectory = homePath.appendingPathComponent(".transumate") // Environment directory
+        let scriptPath = homePath.appendingPathComponent(".transumate/\(scriptName)") // Script path
+
+        // Command to execute the Python script
+        let command = "\(envDirectory.path)/bin/python \(scriptPath.path)"
+
+        // Execute the shell command
+        let result = try executeShellCommandwithresult("\(command) '\(inputText)'")
+
+        // Decode the JSON result from the script
+        guard let data = result.data(using: .utf8) else {
+            throw TranslationError.invalidResult
+        }
+
+        let translationResult = try JSONDecoder().decode(TranslationResponse.self, from: data)
+        return translationResult
     }
 }

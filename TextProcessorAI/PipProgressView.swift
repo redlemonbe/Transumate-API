@@ -34,7 +34,7 @@ struct PipProgressView: View {
     
     let packages = ["requests", "numpy", "pandas", "scipy", "tqdm", "transformers",
                     "torch", "torchaudio", "torchvision", "goose3", "huggingface_hub",
-                    "keybert", "langcodes"]
+                    "keybert", "langcodes", "sentencepiece", "sacremoses", "urllib3<2.0"]
     
     var body: some View {
         VStack(spacing: 20) {

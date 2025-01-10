@@ -89,7 +89,7 @@ def translate_text(text):
 def summarize_text(text):
     inputs = summarizer_tokenizer([text], return_tensors="pt", truncation=True, max_length=1024)
     summary_ids = summarization_model.generate(
-        inputs["input_ids"], max_length=200, min_length=50, num_beams=4, early_stopping=True
+        inputs["input_ids"], max_length=400, min_length=150, num_beams=4, early_stopping=True
     )
     return summarizer_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
