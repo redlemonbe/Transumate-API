@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		13546D862D29D39000D259A7 /* Vapor in Frameworks */ = {isa = PBXBuildFile; productRef = 13546D852D29D39000D259A7 /* Vapor */; };
 		13F4AA022D31261C0042F394 /* Translate.py in Resources */ = {isa = PBXBuildFile; fileRef = 13F4AA012D31261C0042F394 /* Translate.py */; };
-		13F4AA032D31261C0042F394 /* Install_swift.py in Resources */ = {isa = PBXBuildFile; fileRef = 13F4AA002D31261C0042F394 /* Install_swift.py */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,7 +32,6 @@
 		13F4A95A2D303B770042F394 /* Transumate API.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Transumate API.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13F4A9672D305CC70042F394 /* Transumate APITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Transumate APITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13F4A9682D305CC70042F394 /* Transumate APIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Transumate APIUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		13F4AA002D31261C0042F394 /* Install_swift.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = Install_swift.py; sourceTree = "<group>"; };
 		13F4AA012D31261C0042F394 /* Translate.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = Translate.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -74,7 +72,6 @@
 		13C2D6042D2898B000309D22 = {
 			isa = PBXGroup;
 			children = (
-				13F4AA002D31261C0042F394 /* Install_swift.py */,
 				13F4AA012D31261C0042F394 /* Translate.py */,
 				13C2D60F2D2898B000309D22 /* TextProcessorAI */,
 				13F4A95A2D303B770042F394 /* Transumate API.app */,
@@ -202,7 +199,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				13F4AA022D31261C0042F394 /* Translate.py in Resources */,
-				13F4AA032D31261C0042F394 /* Install_swift.py in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
