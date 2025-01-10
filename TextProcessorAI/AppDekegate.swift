@@ -403,7 +403,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
             // Copy Python files to the main directory
             try copyFile(from: "Translate", withExtension: "py", to: mainDirectory)
-            try copyFile(from: "Install", withExtension: "py", to: mainDirectory)
+            try copyFile(from: "Install_swift", withExtension: "py", to: mainDirectory)
 
             directoryStatusMessage = "Python environment, directories, and files successfully installed."
             directoryStatusColor = .green
@@ -453,7 +453,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let homePath = FileManager.default.homeDirectoryForCurrentUser
         let mainDirectory = homePath.appendingPathComponent(".transumate")
         let mainFile = mainDirectory.appendingPathComponent("Translate.py")
-        let modelsFile = mainDirectory.appendingPathComponent("Install.py")
+        let modelsFile = mainDirectory.appendingPathComponent("Install_swift.py")
 
         if FileManager.default.fileExists(atPath: mainDirectory.path) &&
             FileManager.default.fileExists(atPath: mainFile.path) &&
