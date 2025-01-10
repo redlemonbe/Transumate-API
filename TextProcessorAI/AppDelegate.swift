@@ -131,11 +131,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let mainDirectory = homePath.appendingPathComponent(".transumate")
         let modelsDirectory = mainDirectory.appendingPathComponent("models")
 
-        // Create Python environment first
+        // Crée l'environnement Python en premier
         createPythonEnvironment()
 
         do {
-            // Create directories
+            // Crée les répertoires nécessaires
             if !FileManager.default.fileExists(atPath: mainDirectory.path) {
                 try FileManager.default.createDirectory(at: mainDirectory, withIntermediateDirectories: true, attributes: nil)
                 print("✅ Main directory created at: \(mainDirectory.path)")
@@ -145,13 +145,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 print("✅ 'models' directory created at: \(modelsDirectory.path)")
             }
 
-            // Copy Python files to the main directory
+            // Copie les fichiers nécessaires
             try copyFile(from: "Translate", withExtension: "py", to: mainDirectory)
 
+            areFilesInstalled = true // Met à jour l'état observable
             directoryStatusMessage = "Python environment, directories, and files successfully installed."
             directoryStatusColor = .green
-            areFilesInstalled = true
-            checkDirectories()
+            checkDirectories() // Vérifie les fichiers installés
         } catch {
             print("❌ Error during installation: \(error.localizedDescription)")
             directoryStatusMessage = "Error during installation: \(error.localizedDescription)"
@@ -167,25 +167,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let mainDirectory = homePath.appendingPathComponent(".transumate")
 
         do {
-            // Check if the main directory exists
             if FileManager.default.fileExists(atPath: mainDirectory.path) {
-                // Stop the server before deleting directories
+                // Arrête le serveur avant de supprimer les répertoires
                 if isServerRunning {
                     print("🔄 Stopping the server before deleting directories...")
                     stopServer()
                 }
 
-                // Recursively delete files and directories
+                // Supprime récursivement les fichiers et répertoires
                 try FileManager.default.removeItem(at: mainDirectory)
 
                 directoryStatusMessage = "Directories and Python environment successfully deleted."
                 directoryStatusColor = .green
                 print("✅ Directories and Python environment deleted successfully.")
-                areFilesInstalled = false
+                areFilesInstalled = false // Met à jour l'état observable
                 checkDirectories()
             } else {
                 directoryStatusMessage = "Directories do not exist."
                 directoryStatusColor = .red
+                areFilesInstalled = false // Met à jour l'état observable
                 print("ℹ️ No directories to delete.")
             }
         } catch {
@@ -202,8 +202,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let mainDirectory = homePath.appendingPathComponent(".transumate")
         let mainFile = mainDirectory.appendingPathComponent("Translate.py")
 
-        if FileManager.default.fileExists(atPath: mainDirectory.path) &&
-            FileManager.default.fileExists(atPath: mainFile.path) {
+        // Vérifiez l'existence du dossier principal et du fichier requis
+        let directoriesExist = FileManager.default.fileExists(atPath: mainDirectory.path)
+        let filesExist = FileManager.default.fileExists(atPath: mainFile.path)
+
+        areFilesInstalled = directoriesExist && filesExist // Met à jour l'état observable
+
+        if areFilesInstalled {
             directoryStatusMessage = "Directories and files are correctly configured."
             directoryStatusColor = .green
             print("✅ All directories and files exist.")
@@ -213,7 +218,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             print("⚠️ Directories or files are missing.")
         }
     }
-
     /// Copies a resource file from the app bundle to a specified directory.
     private func copyFile(from resourceName: String, withExtension fileExtension: String, to destinationDirectory: URL) throws {
         guard let resourceURL = Bundle.main.url(forResource: resourceName, withExtension: fileExtension) else {

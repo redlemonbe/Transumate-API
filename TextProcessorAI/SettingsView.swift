@@ -62,6 +62,7 @@ struct SettingsView: View {
                         appDelegate.deleteDirectories()
                     }
                     .buttonStyle(BorderedButtonStyle())
+                    .disabled(!appDelegate.areFilesInstalled) 
                 }
             }
             .padding()
