@@ -3,57 +3,73 @@ import AppKit
 import Vapor
 import Network
 
-
+/// Server management extension for AppDelegate
 extension AppDelegate {
     
-    /// Toggles the pause state of the server.
+    /// Manages the server and its interactions
+    class ServerManager {
+        private let appDelegate: AppDelegate
+
+        init(appDelegate: AppDelegate) {
+            self.appDelegate = appDelegate
+        }
+
+        /// Stops the Python script explicitly
+        func stopPythonScript() {
+            appDelegate.terminatePythonScript()
+            print("ℹ️ Python script stopped via ServerManager.")
+        }
+    }
+
+    /// Toggles the pause state of the server
     func togglePause() {
-        guard isServerRunning else { return } // Do nothing if the server is stopped
-        isPaused.toggle()
-        updatePauseRunMenuItem() // Update the "Pause/Run" menu item
-        updateStatusMenuItem() // Update the status menu item
-        print("🔄 Server is now \(isPaused ? "Paused" : "Running")")
+        guard isServerRunning else { return } // No action if the server is stopped
+        
+        isPaused.toggle() // Toggle the pause state
+        
+        // Kill the Python script if the server is paused
+        if isPaused {
+            terminatePythonScript()
+            print("⏸️ Server paused, Python script terminated.")
+        } else {
+            print("▶️ Server resumed.")
+        }
+
+        // Update UI elements
+        updatePauseRunMenuItem()
+        updateStatusMenuItem()
     }
     
-    /// Toggles the server state (start/stop).
+    /// Toggles the server state between start and stop
     func toggleServer() {
-        // Check if required files and directories are present
-        checkDirectories()
-        if directoryStatusColor == .red {
-            print("❌ Required directories or files are missing. Server will not start.")
-            directoryStatusMessage = "Cannot start server: directories or files are missing."
-            return
-        }
-        
+        checkDirectories() // Ensure all required directories exist
+
+        // Stop the server if running
         if isServerRunning {
             stopServer()
-        } else {
-            guard let portInt = Int(UserDefaults.standard.string(forKey: "Port") ?? "5001"),
-                  (1...65535).contains(portInt) else {
-                print("❌ Invalid port")
-                return
-            }
-            startServer(on: portInt)
-        }
-    }
-    
-    /// Starts the server on the specified port.
-    /// - Parameter port: The port number to start the server on.
-    func startServer(on port: Int) {
-        // Ensure required files and directories are present
-        checkDirectories()
-        
-        if directoryStatusColor == .red {
-            print("❌ Missing configuration. Server will not start.")
-            if let window = NSApp.keyWindow, !window.isKind(of: NSAlert.self) {
-                showErrorAlert(message: """
-                Missing configuration files or directories.
-                Go to Settings and click Install to set up the environment.
-                """)
-            }
             return
         }
         
+        // Start the server if stopped
+        guard let port = Int(UserDefaults.standard.string(forKey: "Port") ?? "5001"),
+              (1...65535).contains(port) else {
+            print("❌ Invalid port")
+            return
+        }
+        startServer(on: port)
+    }
+    
+    /// Starts the server on the specified port
+    func startServer(on port: Int) {
+        checkDirectories()
+        
+        // Abort if configuration is incomplete
+        if directoryStatusColor == .red {
+            showConfigurationError()
+            return
+        }
+        
+        // Run the server in the background
         DispatchQueue.global(qos: .background).async {
             do {
                 let app = try self.configureServer(on: port)
@@ -61,76 +77,58 @@ extension AppDelegate {
                 DispatchQueue.main.async {
                     self.server = app
                     self.isServerRunning = true
-                    self.updatePauseRunMenuItem() // Update the "Pause/Run" menu item
-                    self.updateStartStopMenuItem() // Update the "Start/Stop" menu item
-                    self.updateStatusMenuItem() // Update the status menu item
-                    self.updateIpAddressMenuItem(port: port) // Update the IP address
+                    self.updateUIAfterServerStart(port: port)
                     print("✅ Server started on port \(port)")
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.updateStatusMenuItem() // Update the status menu item
+                    self.updateStatusMenuItem()
                     print("❌ Failed to start server: \(error.localizedDescription)")
                 }
             }
         }
     }
     
-    /// Stops the server.
+    /// Stops the server and resets states
     func stopServer() {
         DispatchQueue.global(qos: .background).async {
             self.server?.shutdown()
             DispatchQueue.main.async {
-                self.server = nil
-                self.isServerRunning = false
-                self.isPaused = false // Reset pause state
-                self.updatePauseRunMenuItem() // Update the "Pause/Run" menu item
-                self.updateStartStopMenuItem() // Update the "Start/Stop" menu item
-                self.updateStatusMenuItem() // Update the status menu item
-                self.updateIpAddressMenuItem() // Update the IP address
+                self.terminatePythonScript() // Ensure Python script is terminated
+                self.resetServerState()
                 print("ℹ️ Server stopped")
             }
         }
     }
     
-    /// Configures the server with the specified port.
-    /// - Parameter port: The port number to configure the server on.
-    /// - Throws: An error if the server configuration fails.
+    /// Configures the server on the specified port
     func configureServer(on port: Int) throws -> Application {
-        let app = try createServer(on: port, appDelegate: self)
-        return app
+        return try createServer(on: port, appDelegate: self)
     }
     
-    /// Updates the status menu item based on the server state.
+    /// Updates the status menu item based on server state
     func updateStatusMenuItem() {
-        var statusText = "Unknown"
-        if isServerRunning {
-            statusText = isPaused ? "Paused" : "Running"
-        } else {
-            statusText = "Stopped"
-        }
-        
+        let statusText = isServerRunning ? (isPaused ? "Paused" : "Running") : "Stopped"
         print("🔄 Updating status menu item: \(statusText)")
         statusMenuItem?.title = "Status: \(statusText)"
     }
     
-    /// Updates the "Pause/Run" menu item.
+    /// Updates the "Pause/Run" menu item
     func updatePauseRunMenuItem() {
-        if isServerRunning {
-            pauseRunMenuItem?.title = isPaused ? "Run" : "Pause"
-            pauseRunMenuItem?.isHidden = false
-        } else {
+        guard isServerRunning else {
             pauseRunMenuItem?.isHidden = true
+            return
         }
+        pauseRunMenuItem?.title = isPaused ? "Run" : "Pause"
+        pauseRunMenuItem?.isHidden = false
     }
     
-    /// Updates the "Start/Stop" menu item.
+    /// Updates the "Start/Stop" menu item
     func updateStartStopMenuItem() {
         startStopMenuItem?.title = isServerRunning ? "Stop Server" : "Start Server"
     }
     
-    /// Updates the IP address menu item.
-    /// - Parameter port: Optional port number to include in the display.
+    /// Updates the IP address menu item
     func updateIpAddressMenuItem(port: Int? = nil) {
         guard let ipAddress = getPrimaryIPAddress(),
               let validPort = port, (1...65535).contains(validPort) else {
@@ -140,33 +138,61 @@ extension AppDelegate {
         ipAddressMenuItem?.title = "IP: \(ipAddress):\(validPort)"
     }
     
-    /// Gets the primary IP address of the machine.
-    /// - Returns: The primary IP address or `nil` if unavailable.
+    /// Retrieves the primary IP address of the machine
     func getPrimaryIPAddress() -> String? {
         var address: String?
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
         
+        // Retrieve the interface addresses
         if getifaddrs(&ifaddr) == 0 {
             var ptr = ifaddr
             while ptr != nil {
                 defer { ptr = ptr?.pointee.ifa_next }
                 guard let interface = ptr?.pointee else { continue }
                 
-                let addrFamily = interface.ifa_addr.pointee.sa_family
-                if addrFamily == UInt8(AF_INET) { // IPv4 only
-                    if let name = interface.ifa_name,
-                       String(cString: name) == "en0" { // Primary interface on macOS
-                        var addr = interface.ifa_addr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
-                        let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: Int(INET_ADDRSTRLEN))
-                        inet_ntop(Int32(addrFamily), &addr.sin_addr, buffer, socklen_t(INET_ADDRSTRLEN))
-                        address = String(cString: buffer)
-                        buffer.deallocate()
-                    }
+                // Filter for IPv4 and primary interface
+                if interface.ifa_addr.pointee.sa_family == UInt8(AF_INET),
+                   String(cString: interface.ifa_name) == "en0" {
+                    var addr = interface.ifa_addr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
+                    let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: Int(INET_ADDRSTRLEN))
+                    inet_ntop(AF_INET, &addr.sin_addr, buffer, socklen_t(INET_ADDRSTRLEN))
+                    address = String(cString: buffer)
+                    buffer.deallocate()
                 }
             }
             freeifaddrs(ifaddr)
         }
         
         return address
+    }
+    
+    /// Displays a configuration error alert
+    private func showConfigurationError() {
+        print("❌ Missing configuration. Server will not start.")
+        if let window = NSApp.keyWindow, !window.isKind(of: NSAlert.self) {
+            showErrorAlert(message: """
+            Missing configuration files or directories.
+            Go to Settings and click Install to set up the environment.
+            """)
+        }
+    }
+    
+    /// Updates UI after the server starts
+    private func updateUIAfterServerStart(port: Int) {
+        updatePauseRunMenuItem()
+        updateStartStopMenuItem()
+        updateStatusMenuItem()
+        updateIpAddressMenuItem(port: port)
+    }
+    
+    /// Resets the server state and updates the UI
+    private func resetServerState() {
+        server = nil
+        isServerRunning = false
+        isPaused = false
+        updatePauseRunMenuItem()
+        updateStartStopMenuItem()
+        updateStatusMenuItem()
+        updateIpAddressMenuItem()
     }
 }

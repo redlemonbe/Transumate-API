@@ -1,68 +1,119 @@
 import Vapor
 import Translation
 
-// Variable globale pour gérer l'état du serveur
+// Global variable to manage the server's working state
 var isWorking = false
 
+/// Creates and configures the Vapor server
 func createServer(on port: Int, appDelegate: AppDelegate) throws -> Application {
-    // Create a custom environment
     let env = Environment(name: "custom", arguments: ["vapor", "serve", "--port", "\(port)"])
     let app = Application(env)
-
-    // Configure the server to bind to all interfaces
     app.http.server.configuration.hostname = "0.0.0.0"
     app.http.server.configuration.port = port
 
-    // Route for server status
+    // Server status route
     app.post("status") { req -> Response in
+        let status: String
         if appDelegate.isPaused {
-            let response = Response(status: .serviceUnavailable)
-            try response.content.encode(["error": "paused"], as: .json)
-            return response
+            status = "paused"
         } else if isWorking {
-            let response = Response(status: .ok)
-            try response.content.encode(["status": "working"], as: .json)
-            return response
+            status = "busy"
         } else {
-            let response = Response(status: .ok)
-            try response.content.encode(["status": "waiting"], as: .json)
-            return response
+            status = "ready"
         }
+        let response = Response(status: .ok)
+        try response.content.encode(["status": status], as: .json)
+        return response
     }
 
-    // Route for translation
-    app.post("translate") { req -> Response in
-        // Check if the server is busy
+    // Translation route
+    app.post("translate") { req -> EventLoopFuture<Response> in
+        // Handle paused state
+        if appDelegate.isPaused {
+            appDelegate.terminatePythonScript() // Stop the Python script if paused
+            let response = Response(status: .serviceUnavailable)
+            try? response.content.encode([
+                "status": "paused",
+                "message": "The server is paused. The Python script was terminated."
+            ], as: .json)
+            return req.eventLoop.makeSucceededFuture(response)
+        }
+
+        // Handle busy state
         guard !isWorking else {
             let response = Response(status: .tooManyRequests)
-            try response.content.encode(["error": "Server is busy. Try again later."], as: .json)
-            return response
+            try? response.content.encode([
+                "status": "busy",
+                "message": "The server is currently processing another request. Please try again later."
+            ], as: .json)
+            return req.eventLoop.makeSucceededFuture(response)
         }
 
         // Decode the request body
-        let requestData = try req.content.decode(TranslationRequest.self)
+        let requestData: TranslationRequest
+        do {
+            requestData = try req.content.decode(TranslationRequest.self)
+        } catch {
+            let response = Response(status: .badRequest)
+            try? response.content.encode([
+                "status": "error",
+                "message": "Invalid request body.",
+                "details": "\(error)"
+            ], as: .json)
+            return req.eventLoop.makeSucceededFuture(response)
+        }
 
         // Mark the server as working
         isWorking = true
 
-        // Ensure isWorking is reset to false after processing
-        defer {
-            isWorking = false
+        // Create a promise to handle the script execution
+        let promise = req.eventLoop.makePromise(of: Response.self)
+
+        // Dispatch work asynchronously
+        DispatchQueue.global().async {
+            defer {
+                // Ensure `isWorking` is reset when work completes
+                DispatchQueue.main.async {
+                    isWorking = false
+                }
+            }
+
+            do {
+                // Execute the Python translation script
+                let translationResult = try appDelegate.performTranslationWithScript(inputText: requestData.text)
+
+                // Create a success response
+                let response = Response(status: .ok)
+                try response.content.encode(translationResult, as: .json)
+                promise.succeed(response)
+            } catch {
+                // Handle script execution errors
+                let response = Response(status: .internalServerError)
+                try? response.content.encode([
+                    "status": "error",
+                    "message": "Translation failed.",
+                    "details": "\(error)"
+                ], as: .json)
+                promise.fail(error)
+            }
         }
 
-        // Perform the translation and handle errors
-        do {
-            let translationResult = try appDelegate.performTranslationWithScript(inputText: requestData.text)
+        // Apply a timeout of 2 minutes
+        let timeoutFuture = req.eventLoop.scheduleTask(in: .seconds(120)) {
+            appDelegate.terminatePythonScript() // Stop Python script on timeout
+            let response = Response(status: .gatewayTimeout)
+            try? response.content.encode([
+                "status": "timeout",
+                "message": "Translation request timed out. The Python script was terminated."
+            ], as: .json)
+            promise.fail(Abort(.gatewayTimeout, reason: "Translation script timed out"))
+            return response
+        }
 
-            // Create and return the response
-            let response = Response(status: .ok)
-            try response.content.encode(translationResult, as: .json)
-            return response
-        } catch {
-            // Handle errors
-            let response = Response(status: .internalServerError)
-            try response.content.encode(["error": "Translation failed", "details": "\(error)"], as: .json)
-            return response
+        // Return the first result: either the promise succeeds or the timeout triggers
+        return promise.futureResult.flatMap { result in
+            timeoutFuture.cancel() // Cancel the timeout if work completes
+            return req.eventLoop.makeSucceededFuture(result)
         }
     }
 
@@ -70,12 +121,12 @@ func createServer(on port: Int, appDelegate: AppDelegate) throws -> Application 
     return app
 }
 
-// Structure to decode incoming request data
+// Structure for decoding incoming request data
 struct TranslationRequest: Content {
     let text: String
 }
 
-// Error for translation issues
+// Error enum for translation issues
 enum TranslationError: Error {
     case invalidResult
 }
