@@ -4,74 +4,29 @@ struct SettingsView: View {
     @EnvironmentObject var appDelegate: AppDelegate
     @State private var apiKey: String = ""
     @State private var port: String = "8080"
+    @State private var cpuAllocation: Double = 20.0 // Default CPU allocation
     var closeWindow: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
-            // Header Section
             headerSection
-
             Divider()
-
-            // Server Status Section
             serverStatusSection
-
-            // Server Settings Section
             serverSettingsSection
-
-            //File Manager
+            cpuAllocationSection
             fileManagerSection
-            
             Spacer()
-
-            // Footer Section
             footerSection
         }
         .padding()
-        .frame(width: 500, height: 650)
+        .frame(width: 500, height: 800)
         .background(Color(NSColor.windowBackgroundColor))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 10)
         .onAppear(perform: loadConfiguration)
     }
-  
-    private var fileManagerSection: some View {
-        GroupBox(label: Label("File Manager", systemImage: "folder")) {
-            VStack(alignment: .leading, spacing: 10) {
-                // Status Message
-                Text(appDelegate.directoryStatusMessage)
-                    .foregroundColor(appDelegate.directoryStatusColor)
-                    .padding(.bottom, 5)
-                
-                // Create Directory Section
-                HStack {
-                    Text("Install Files:")
-                    Spacer()
-                    Button("Install") {
-                        appDelegate.installFiles()
-                    }
-                    .buttonStyle(BorderedButtonStyle())
-                    .disabled(appDelegate.areFilesInstalled) // Désactivation du bouton
-                }
-                
-                // Delete Directory Section
-                HStack {
-                    Text("Delete Files:")
-                    Spacer()
-                    Button("Delete") {
-                        appDelegate.deleteDirectories()
-                    }
-                    .buttonStyle(BorderedButtonStyle())
-                    .disabled(!appDelegate.areFilesInstalled) 
-                }
-            }
-            .padding()
-            .onAppear {
-                appDelegate.checkDirectories()
-            }
-        }
-    }
-    
+
+    // MARK: - Header Section
     private var headerSection: some View {
         VStack(spacing: 5) {
             Text("Transumate API")
@@ -84,6 +39,7 @@ struct SettingsView: View {
         .padding(.top, 20)
     }
 
+    // MARK: - Server Status Section
     private var serverStatusSection: some View {
         GroupBox(label: Label("Server Status", systemImage: "bolt.fill")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -97,20 +53,12 @@ struct SettingsView: View {
                 HStack {
                     Spacer()
                     Button(appDelegate.isPaused ? "Run" : "Pause") {
-                        togglePauseRun()
+                        appDelegate.togglePause()
                     }
                     .buttonStyle(BorderedButtonStyle())
 
                     Button(appDelegate.isServerRunning ? "Stop Server" : "Start Server") {
-                        if appDelegate.isServerRunning {
-                            appDelegate.stopServer()
-                        } else {
-                            guard let portInt = Int(port), (1...65535).contains(portInt) else {
-                                print("❌ Invalid port")
-                                return
-                            }
-                            appDelegate.startServer(on: portInt)
-                        }
+                        toggleServer()
                     }
                     .buttonStyle(BorderedButtonStyle())
                 }
@@ -120,6 +68,7 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Server Settings Section
     private var serverSettingsSection: some View {
         GroupBox(label: Label("Server Settings", systemImage: "server.rack")) {
             VStack(alignment: .leading, spacing: 10) {
@@ -128,7 +77,6 @@ struct SettingsView: View {
                     Spacer()
                     TextField("Enter API Key", text: $apiKey)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .textSelection(.enabled)
                     Button("Regenerate") {
                         regenerateApiKey()
                     }
@@ -143,8 +91,10 @@ struct SettingsView: View {
                 }
                 HStack {
                     Spacer()
-                    Button("Save Settings", action: saveConfiguration)
-                        .buttonStyle(BorderedButtonStyle())
+                    Button("Save Settings") {
+                        saveConfiguration()
+                    }
+                    .buttonStyle(BorderedButtonStyle())
                 }
                 .padding(.top, 5)
             }
@@ -152,12 +102,60 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - CPU Allocation Section
+    private var cpuAllocationSection: some View {
+        GroupBox(label: Label("CPU Allocation", systemImage: "cpu")) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("CPU Power Allocation:")
+                    Spacer()
+                    Text("\(Int(cpuAllocation))%")
+                        .foregroundColor(.blue)
+                        .fontWeight(.bold)
+                }
+                Slider(value: $cpuAllocation, in: 0...100, step: 1)
+                    .onChange(of: cpuAllocation) {
+                        saveCPUAllocation()
+                    }
+            }
+            .padding()
+        }
+    }
+
+    // MARK: - File Manager Section
+    private var fileManagerSection: some View {
+        GroupBox(label: Label("File Manager", systemImage: "folder")) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(appDelegate.directoryStatusMessage)
+                    .foregroundColor(appDelegate.directoryStatusColor)
+                HStack {
+                    Text("Install Files:")
+                    Spacer()
+                    Button("Install") {
+                        appDelegate.installFiles()
+                    }
+                    .buttonStyle(BorderedButtonStyle())
+                    .disabled(appDelegate.areFilesInstalled)
+                }
+                HStack {
+                    Text("Delete Files:")
+                    Spacer()
+                    Button("Delete") {
+                        appDelegate.deleteDirectories()
+                    }
+                    .buttonStyle(BorderedButtonStyle())
+                    .disabled(!appDelegate.areFilesInstalled)
+                }
+            }
+            .padding()
+        }
+    }
+
+    // MARK: - Footer Section
     private var footerSection: some View {
         VStack(spacing: 10) {
             HStack {
-
                 Spacer()
-
                 Button("Close") {
                     closeWindow()
                 }
@@ -175,42 +173,26 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Helper Methods
     func getServerStatusText() -> String {
-        if appDelegate.isServerRunning {
-            return appDelegate.isPaused ? "Paused" : "Running"
-        } else {
-            return "Stopped"
-        }
+        appDelegate.isServerRunning ? (appDelegate.isPaused ? "Paused" : "Running") : "Stopped"
     }
 
     func getServerStatusColor() -> Color {
-        if appDelegate.isServerRunning {
-            return appDelegate.isPaused ? .orange : .green
-        } else {
-            return .red
-        }
-    }
-
-    func togglePauseRun() {
-        appDelegate.togglePause()
+        appDelegate.isServerRunning ? (appDelegate.isPaused ? .orange : .green) : .red
     }
 
     func loadConfiguration() {
         let userDefaults = UserDefaults.standard
-        if let savedApiKey = userDefaults.string(forKey: "APIKey") {
-            apiKey = savedApiKey
-        } else {
-            apiKey = UUID().uuidString
-            saveConfiguration()
-            print("✅ API Key generated: \(apiKey)")
-        }
+        apiKey = userDefaults.string(forKey: "APIKey") ?? UUID().uuidString
         port = userDefaults.string(forKey: "Port") ?? "8080"
+        cpuAllocation = userDefaults.double(forKey: "CPUAllocation")
+        if cpuAllocation == 0 { cpuAllocation = 20.0 } // Default 20% if no value saved
     }
 
     func regenerateApiKey() {
         apiKey = UUID().uuidString
         saveConfiguration()
-        print("🔄 API Key regenerated: \(apiKey)")
     }
 
     func saveConfiguration() {
@@ -218,16 +200,12 @@ struct SettingsView: View {
         userDefaults.set(apiKey, forKey: "APIKey")
         userDefaults.set(port, forKey: "Port")
         print("✅ Configuration saved: API Key: \(apiKey), Port: \(port)")
+    }
 
-        if appDelegate.isServerRunning {
-            print("🔄 Restarting server with new configuration...")
-            appDelegate.stopServer()
-        }
-        guard let portInt = Int(port), (1...65535).contains(portInt) else {
-            print("❌ Invalid port, server not restarted.")
-            return
-        }
-        appDelegate.startServer(on: portInt)
+    func saveCPUAllocation() {
+        let userDefaults = UserDefaults.standard
+        userDefaults.set(cpuAllocation, forKey: "CPUAllocation")
+        print("✅ CPU Allocation saved: \(Int(cpuAllocation))%")
     }
 
     func toggleServer() {

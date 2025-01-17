@@ -62,6 +62,20 @@ func createServer(on port: Int, appDelegate: AppDelegate) throws -> Application 
             return req.eventLoop.makeSucceededFuture(response)
         }
 
+        // Check CPU usage
+        let currentCPUUsage = getCPUUsage()
+        let cpuAllocationLimit = UserDefaults.standard.double(forKey: "CPUAllocation")
+        if currentCPUUsage >= cpuAllocationLimit {
+            let response = Response(status: .serviceUnavailable)
+            try? response.content.encode([
+                "status": "cpu_overload",
+                "message": "The server CPU usage is too high. The translation script was not executed.",
+                "cpu_usage_percent": String(format: "%.2f", currentCPUUsage),
+                "cpu_allocation_limit": String(format: "%.2f", cpuAllocationLimit)
+            ], as: .json)
+            return req.eventLoop.makeSucceededFuture(response)
+        }
+
         // Decode the request body
         let requestData: TranslationRequest
         do {
@@ -180,9 +194,6 @@ func getMemoryUsage() -> [String: Double] {
 
     return memoryStats
 }
-
-/// Returns CPU usage as a percentage
-import Foundation
 
 func getCPUUsage() -> Double {
     var cpuLoad = host_cpu_load_info()
