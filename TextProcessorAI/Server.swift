@@ -182,47 +182,27 @@ func getMemoryUsage() -> [String: Double] {
 }
 
 /// Returns CPU usage as a percentage
+import Foundation
+
 func getCPUUsage() -> Double {
-    var threadsCount: mach_msg_type_number_t = 0
-    var threadList: thread_act_array_t?
-    let result = task_threads(mach_task_self_, &threadList, &threadsCount)
+    var cpuLoad = host_cpu_load_info()
+    var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info_data_t>.size / MemoryLayout<integer_t>.size)
     
-    defer {
-        if let threadList = threadList {
-            vm_deallocate(
-                mach_task_self_,
-                vm_address_t(bitPattern: threadList),
-                vm_size_t(threadsCount) * UInt(MemoryLayout<thread_t>.size)
-            )
+    let result = withUnsafeMutablePointer(to: &cpuLoad) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+            host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &count)
         }
     }
     
     guard result == KERN_SUCCESS else { return 0.0 }
+    
+    let user = Double(cpuLoad.cpu_ticks.0) // User time
+    let system = Double(cpuLoad.cpu_ticks.1) // System time
+    let idle = Double(cpuLoad.cpu_ticks.2) // Idle time
+    let nice = Double(cpuLoad.cpu_ticks.3) // Nice time
 
-    var totalUsage: Double = 0.0
-
-    for i in 0..<threadsCount {
-        var threadInfo: [integer_t] = Array(repeating: 0, count: Int(THREAD_INFO_MAX))
-        var threadInfoCount: mach_msg_type_number_t = mach_msg_type_number_t(THREAD_INFO_MAX)
-
-        let result = threadInfo.withUnsafeMutableBufferPointer { bufferPointer in
-            thread_info(
-                threadList![Int(i)],
-                thread_flavor_t(THREAD_BASIC_INFO),
-                bufferPointer.baseAddress,
-                &threadInfoCount
-            )
-        }
-
-        guard result == KERN_SUCCESS else { continue }
-
-        threadInfo.withUnsafeBytes { rawBufferPointer in
-            let threadBasicInfo = rawBufferPointer.baseAddress!.assumingMemoryBound(to: thread_basic_info.self).pointee
-            if threadBasicInfo.flags & TH_FLAGS_IDLE == 0 {
-                totalUsage += Double(threadBasicInfo.cpu_usage) / Double(TH_USAGE_SCALE) * 100.0
-            }
-        }
-    }
-
-    return totalUsage
+    let total = user + system + idle + nice
+    let usage = ((user + system + nice) / total) * 100.0
+    
+    return usage
 }
