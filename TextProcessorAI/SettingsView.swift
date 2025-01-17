@@ -5,6 +5,8 @@ struct SettingsView: View {
     @State private var apiKey: String = ""
     @State private var port: String = "8080"
     @State private var cpuAllocation: Double = 20.0 // Default CPU allocation
+    @State private var isHelpPresented: Bool = false // State to present HelpView
+    
     var closeWindow: () -> Void
 
     var body: some View {
@@ -24,6 +26,11 @@ struct SettingsView: View {
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 10)
         .onAppear(perform: loadConfiguration)
+        .sheet(isPresented: $isHelpPresented) {
+            HelpView {
+                isHelpPresented = false // Close HelpView
+            }
+        }
     }
 
     // MARK: - Header Section
@@ -155,6 +162,10 @@ struct SettingsView: View {
     private var footerSection: some View {
         VStack(spacing: 10) {
             HStack {
+                Button("Help") {
+                    isHelpPresented = true // Open HelpView
+                }
+                .buttonStyle(BorderedButtonStyle())
                 Spacer()
                 Button("Close") {
                     closeWindow()
