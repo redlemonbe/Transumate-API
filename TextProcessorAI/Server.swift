@@ -1,5 +1,7 @@
 import Vapor
 import Translation
+import Foundation
+
 
 // Global variable to manage the server's working state
 var isWorking = false
@@ -21,8 +23,19 @@ func createServer(on port: Int, appDelegate: AppDelegate) throws -> Application 
         } else {
             status = "ready"
         }
+        
+        let memoryUsage = getMemoryUsage()
+        let cpuUsage = getCPUUsage()
+        let osName = ProcessInfo.processInfo.operatingSystemVersionString
+
         let response = Response(status: .ok)
-        try response.content.encode(["status": status], as: .json)
+        try response.content.encode([
+            "status": status,
+            "memory_used_gb": String(format: "%.2f", memoryUsage["used"] ?? 0.0), // Total memory used in GB
+            "memory_total_gb": String(format: "%.2f", memoryUsage["total"] ?? 0.0), // Total system memory in GB
+            "cpu_usage_percent": String(format: "%.2f", cpuUsage), // CPU usage as percentage
+            "os": osName
+        ], as: .json)
         return response
     }
 
@@ -129,4 +142,87 @@ struct TranslationRequest: Content {
 // Error enum for translation issues
 enum TranslationError: Error {
     case invalidResult
+}
+
+/// Returns memory usage information
+func getMemoryUsage() -> [String: Double] {
+    var memoryStats: [String: Double] = [:]
+
+    // Get system-wide memory statistics
+    var vmStats = vm_statistics64()
+    var count = mach_msg_type_number_t(MemoryLayout.size(ofValue: vmStats) / MemoryLayout<integer_t>.size)
+    let hostPort = mach_host_self()
+
+    let result = withUnsafeMutablePointer(to: &vmStats) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+            host_statistics64(hostPort, HOST_VM_INFO64, $0, &count)
+        }
+    }
+
+    if result == KERN_SUCCESS {
+        // Page size (in bytes)
+        let pageSize = vm_kernel_page_size
+        
+        // Memory used (active + inactive + wired)
+        let usedMemory = Double(vmStats.active_count + vmStats.inactive_count + vmStats.wire_count) * Double(pageSize)
+        
+        // Total physical memory
+        let totalMemory = Double(ProcessInfo.processInfo.physicalMemory)
+        
+        // Assign values in gigabytes (GB)
+        memoryStats["used"] = usedMemory / 1024 / 1024 / 1024 // Convert to GB
+        memoryStats["total"] = totalMemory / 1024 / 1024 / 1024 // Convert to GB
+    } else {
+        // Default to 0 if fetching statistics fails
+        memoryStats["used"] = 0.0
+        memoryStats["total"] = 0.0
+    }
+
+    return memoryStats
+}
+
+/// Returns CPU usage as a percentage
+func getCPUUsage() -> Double {
+    var threadsCount: mach_msg_type_number_t = 0
+    var threadList: thread_act_array_t?
+    let result = task_threads(mach_task_self_, &threadList, &threadsCount)
+    
+    defer {
+        if let threadList = threadList {
+            vm_deallocate(
+                mach_task_self_,
+                vm_address_t(bitPattern: threadList),
+                vm_size_t(threadsCount) * UInt(MemoryLayout<thread_t>.size)
+            )
+        }
+    }
+    
+    guard result == KERN_SUCCESS else { return 0.0 }
+
+    var totalUsage: Double = 0.0
+
+    for i in 0..<threadsCount {
+        var threadInfo: [integer_t] = Array(repeating: 0, count: Int(THREAD_INFO_MAX))
+        var threadInfoCount: mach_msg_type_number_t = mach_msg_type_number_t(THREAD_INFO_MAX)
+
+        let result = threadInfo.withUnsafeMutableBufferPointer { bufferPointer in
+            thread_info(
+                threadList![Int(i)],
+                thread_flavor_t(THREAD_BASIC_INFO),
+                bufferPointer.baseAddress,
+                &threadInfoCount
+            )
+        }
+
+        guard result == KERN_SUCCESS else { continue }
+
+        threadInfo.withUnsafeBytes { rawBufferPointer in
+            let threadBasicInfo = rawBufferPointer.baseAddress!.assumingMemoryBound(to: thread_basic_info.self).pointee
+            if threadBasicInfo.flags & TH_FLAGS_IDLE == 0 {
+                totalUsage += Double(threadBasicInfo.cpu_usage) / Double(TH_USAGE_SCALE) * 100.0
+            }
+        }
+    }
+
+    return totalUsage
 }
