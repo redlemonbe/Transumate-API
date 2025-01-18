@@ -29,6 +29,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let text: String
     }
     
+    enum TranslationError: Error {
+        case invalidResult
+    }
+    
     // MARK: - Application Lifecycle
 
     /// Called when the application has finished launching.
@@ -275,51 +279,51 @@ extension AppDelegate {
         /// Executes the Python translation script with process management.
         /// - Parameter inputText: The text to translate.
         /// - Returns: The result of the translation as a dictionary.
-        func performTranslationWithScript(inputText: String) throws -> TranslationResponse {
-            let scriptName = "Translate.py"
+    func performTranslationWithScript(inputText: String) throws -> TranslationResponse {
+        let scriptName = "Translate.py"
 
-            // Path setup
-            let homePath = FileManager.default.homeDirectoryForCurrentUser
-            let envDirectory = homePath.appendingPathComponent(".transumate") // Environment directory
-            let scriptPath = homePath.appendingPathComponent(".transumate/\(scriptName)") // Script path
+        // Path setup
+        let homePath = FileManager.default.homeDirectoryForCurrentUser
+        let envDirectory = homePath.appendingPathComponent(".transumate") // Environment directory
+        let scriptPath = homePath.appendingPathComponent(".transumate/\(scriptName)") // Script path
 
-            // Command to execute the Python script
-            let pythonPath = "\(envDirectory.path)/bin/python"
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: pythonPath)
-            process.arguments = [scriptPath.path, inputText]
+        // Command to execute the Python script
+        let pythonPath = "\(envDirectory.path)/bin/python"
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: pythonPath)
+        process.arguments = [scriptPath.path, inputText]
 
-            // Capture the output
-            let outputPipe = Pipe()
-            process.standardOutput = outputPipe
-            process.standardError = outputPipe
+        // Capture the output
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
 
-            // Save the process globally to allow termination
-            AppDelegate.pythonProcess = process
+        // Save the process globally to allow termination
+        AppDelegate.pythonProcess = process
 
-            // Run the process
-            try process.run()
+        // Run the process
+        try process.run()
 
-            // Wait for the process to complete
-            process.waitUntilExit()
+        // Wait for the process to complete
+        process.waitUntilExit()
 
-            // Reset the process reference
-            AppDelegate.pythonProcess = nil
+        // Reset the process reference
+        AppDelegate.pythonProcess = nil
 
-            // Read the output
-            let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            guard let result = String(data: outputData, encoding: .utf8) else {
-                throw TranslationError.invalidResult
-            }
-
-            // Decode the JSON result from the script
-            guard let data = result.data(using: .utf8) else {
-                throw TranslationError.invalidResult
-            }
-
-            let translationResult = try JSONDecoder().decode(TranslationResponse.self, from: data)
-            return translationResult
+        // Read the output
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        guard let result = String(data: outputData, encoding: .utf8) else {
+            throw TranslationError.invalidResult
         }
+
+        // Decode the JSON result from the script
+        guard let data = result.data(using: .utf8) else {
+            throw TranslationError.invalidResult
+        }
+
+        let translationResult = try JSONDecoder().decode(TranslationResponse.self, from: data)
+        return translationResult
+    }
 
         /// Terminates the currently running Python script.
         func terminatePythonScript() {
