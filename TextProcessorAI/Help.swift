@@ -17,7 +17,7 @@ struct HelpView: View {
                     serverHelpSection
                     fileManagerHelpSection
                     cpuHelpSection
-                    apiUsageSection // New Section for API Usage
+                    apiUsageSection // Updated Section for API Usage and Status/Error Explanation
                 }
                 .padding()
             }
@@ -32,6 +32,11 @@ struct HelpView: View {
         .background(Color(NSColor.windowBackgroundColor))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 10)
+        .onDrag {
+            NSCursor.arrow.set()
+            return NSItemProvider()
+        }
+        .textSelection(.enabled) // Enables text selection and copy-paste
     }
 
     // MARK: - Header Section
@@ -53,10 +58,10 @@ struct HelpView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Welcome to Transumate! Your trusted companion for text translation and summarization.")
                 Text("""
-                If you're feeling lost, don't panic! Here's an overview of what you can do:
+                If you're feeling lost, here's what you can do:
                 - Configure your server and API settings.
-                - Manage files and directories for your project.
-                - Allocate CPU resources like a pro.
+                - Manage project files and directories.
+                - Allocate CPU resources efficiently.
                 Remember, “Not all those who wander are lost.”
                 """)
                     .foregroundColor(.secondary)
@@ -72,15 +77,15 @@ struct HelpView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Starting and Stopping the Server:")
                 Text("""
-                - Click "Start Server" to fire up the server. Make sure the port is valid (1–65535).
-                - Use "Pause" to temporarily halt operations without shutting down.
+                - Click "Start Server" to launch the server. Ensure the port is valid (1–65535).
+                - Use "Pause" to temporarily halt operations.
                 - Click "Stop Server" to terminate all operations. “Sometimes you gotta stop to go forward.”
                 """)
                     .foregroundColor(.secondary)
                 Text("Troubleshooting:")
                 Text("""
-                - If the server doesn't start, check the port or ensure all required files are installed.
-                - Paused? Don't worry. Click "Run" to resume operations.
+                - If the server doesn’t start, check the port or ensure all required files are installed.
+                - Paused? Click "Run" to resume operations.
                 """)
                     .foregroundColor(.secondary)
             }
@@ -94,13 +99,13 @@ struct HelpView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("File Installation:")
                 Text("""
-                - Click "Install" to set up the necessary directories and files.
-                - Already installed? The button will disable itself. We’re not fans of redundant work either.
+                - Click "Install" to set up necessary directories and files.
+                - If already installed, the button will be disabled to avoid redundant work.
                 """)
                     .foregroundColor(.secondary)
                 Text("File Deletion:")
                 Text("""
-                - Click "Delete" to remove the project directories and start fresh.
+                - Click "Delete" to remove all project directories.
                 - Warning: This action is irreversible. “With great power comes great responsibility.”
                 """)
                     .foregroundColor(.red)
@@ -116,13 +121,13 @@ struct HelpView: View {
                 Text("Adjusting CPU Power:")
                 Text("""
                 - Use the slider to allocate CPU resources (0–100%).
-                - Default is 20%. Increase this value for faster operations, but be mindful of your machine's limits.
+                - Default: 20%. Increase for faster operations, but monitor your machine's limits.
                 """)
                     .foregroundColor(.secondary)
                 Text("CPU Overload Protection:")
                 Text("""
                 - The system monitors CPU usage in real-time.
-                - If usage exceeds your allocated limit, operations will pause to prevent overload. “The needs of the many outweigh the needs of the few.”
+                - If usage exceeds your allocated limit, operations will pause. “The needs of the many outweigh the needs of the few.”
                 """)
                     .foregroundColor(.secondary)
             }
@@ -136,32 +141,103 @@ struct HelpView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Using the API:")
                 Text("""
-                The API provides endpoints for text translation and summarization. Here’s how to use it:
-                - Base URL: `http://<your-server-ip>:<port>/`
-                - Supported Endpoints:
-                    - **`POST /translate`**: Submit text for translation.
-                    - **`GET /status`**: Check the server's status.
+                The Transumate API provides endpoints for text translation and summarization.
+                Use these endpoints to interact with the server programmatically.
                 """)
                     .foregroundColor(.secondary)
-                Text("Example Request:")
+
+                Divider()
+
+                // API Endpoints
+                Text("Endpoints:")
                 Text("""
-                - Endpoint: `/translate`
-                - Method: `POST`
-                - Body: `{ "text": "Your text here" }`
-                - Headers: Include your API Key as `Authorization: Bearer <API_KEY>`.
+                - **Base URL**: `http://<your-server-ip>:<port>/`
+                - **POST /translate**: Submits text for translation. Requires a valid API key.
+                - **GET /status**: Retrieves the server's current status.
                 """)
                     .foregroundColor(.secondary)
-                Text("Response Example:")
+
+                Divider()
+
+                // Request Example
+                Text("Request Example:")
                 Text("""
+                Endpoint: `/translate`
+                Method: `POST`
+                Headers:
+                    - `Authorization: Bearer <API_KEY>`
+                Body:
                 {
-                    "status": "ok",
-                    "translated_text": "Translated text here.",
-                    "source_language": "en",
-                    "target_language": "fr"
+                    "url": "https://example.com/some-article"
                 }
                 """)
                     .foregroundColor(.blue)
                     .font(.system(size: 12, weight: .regular, design: .monospaced))
+
+                Divider()
+
+                // Response Example
+                Text("Response Example:")
+                Text("""
+                {
+                    "date": "2025-01-16T22:03:35+01:00",
+                    "status": "ok",
+                    "translated_title": "Translated version of the title.",
+                    "keywords": {
+                        "keyword_1": "key1",
+                        "keyword_2": "key2",
+                        "keyword_3": "key3",
+                        "keyword_2": "key4",
+                        "keyword_3": "key5"
+                    },
+                    "text": "Translated version of the text provided.",
+                    "author": "Author of the original text",
+                    "title": "Original title provided in the request"
+                }
+                """)
+                    .foregroundColor(.blue)
+                    .font(.system(size: 12, weight: .regular, design: .monospaced))
+
+                Divider()
+
+                // Explanation of Response Fields
+                Text("Explanation of Response Fields:")
+                Text("""
+                - **date**: Timestamp when the response was generated, in ISO 8601 format.
+                - **status**: Indicates the operation's result:
+                    - `ok`: The request was successful.
+                    - `error`: An error occurred.
+                - **translated_title**: The translated version of the title provided in the request.
+                - **keywords**: A list of extracted keywords from the text, represented as key-value pairs.
+                - **text**: The fully translated version of the input text.
+                - **author**: The author of the original text (if provided).
+                - **title**: The original title included in the request.
+                """)
+                    .foregroundColor(.secondary)
+
+                Divider()
+
+                // Error Handling
+                Text("Common Errors:")
+                Text("""
+                - **Missing API key**: No API key was provided in the request header.
+                - **Invalid API key**: The provided API key is incorrect.
+                - **CPU overload**: CPU usage exceeded the allocated limit. The request is paused until usage decreases.
+                - **Invalid request body**: The request payload is malformed or missing required fields.
+                - **Unable to access the provided URL.
+                """)
+                    .foregroundColor(.red)
+
+                Divider()
+
+                // Notes
+                Text("Additional Notes:")
+                Text("""
+                - Ensure the API key is configured in the server's settings.
+                - The `Authorization` header is required for all endpoints except `/status`.
+                - All dates are returned in ISO 8601 format.
+                """)
+                    .foregroundColor(.secondary)
             }
             .padding()
         }
