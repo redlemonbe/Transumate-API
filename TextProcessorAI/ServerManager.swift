@@ -2,6 +2,7 @@ import Foundation
 import AppKit
 import Vapor
 import Network
+import SystemConfiguration
 
 /// Server management extension for AppDelegate
 extension AppDelegate {
@@ -142,27 +143,34 @@ extension AppDelegate {
     func getPrimaryIPAddress() -> String? {
         var address: String?
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        
-        // Retrieve the interface addresses
+
+        // Récupération des interfaces réseau
         if getifaddrs(&ifaddr) == 0 {
             var ptr = ifaddr
             while ptr != nil {
                 defer { ptr = ptr?.pointee.ifa_next }
                 guard let interface = ptr?.pointee else { continue }
-                
-                // Filter for IPv4 and primary interface
-                if interface.ifa_addr.pointee.sa_family == UInt8(AF_INET),
-                   String(cString: interface.ifa_name) == "en0" {
-                    var addr = interface.ifa_addr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
-                    let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: Int(INET_ADDRSTRLEN))
-                    inet_ntop(AF_INET, &addr.sin_addr, buffer, socklen_t(INET_ADDRSTRLEN))
-                    address = String(cString: buffer)
-                    buffer.deallocate()
+
+                // Vérifier si l'interface est de type IPv4
+                if interface.ifa_addr.pointee.sa_family == UInt8(AF_INET) {
+                    let name = String(cString: interface.ifa_name)
+                    
+                    // Filtrer les interfaces non valides (ignorer loopback "lo0")
+                    if name != "lo0" {
+                        var addr = interface.ifa_addr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
+                        let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: Int(INET_ADDRSTRLEN))
+                        inet_ntop(AF_INET, &addr.sin_addr, buffer, socklen_t(INET_ADDRSTRLEN))
+                        address = String(cString: buffer)
+                        buffer.deallocate()
+
+                        // Retourner la première adresse IPv4 valide trouvée
+                        break
+                    }
                 }
             }
             freeifaddrs(ifaddr)
         }
-        
+
         return address
     }
     

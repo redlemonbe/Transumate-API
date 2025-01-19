@@ -32,7 +32,7 @@ struct PipProgressView: View {
     @State private var downloadedFiles: Int = 0
     private var taskObserver: NSKeyValueObservation?
     
-    let packages = ["requests", "numpy", "pandas", "scipy", "tqdm", "transformers",
+    let packages = ["googletrans", "requests", "numpy", "pandas", "scipy", "tqdm", "transformers",
                     "torch", "torchaudio", "torchvision", "goose3", "huggingface_hub",
                     "keybert", "langcodes", "sentencepiece", "sacremoses", "urllib3<2.0"]
     
@@ -173,7 +173,7 @@ struct PipProgressView: View {
         }
         
         DispatchQueue.global(qos: .background).async {
-            var totalDownloadedBytes = 0.0
+          
             let totalFiles = self.totalModelFileCount()
             
             for (modelName, files) in MODEL_FILES {
